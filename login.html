@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body {margin:0;font-family:sans-serif;background:#0c1220;display:flex;justify-content:center;align-items:flex-start;min-height:600px;}
+    .header, .footer {background:rgba(255,255,255,0.085);color:#fff;position:fixed;left:0;width:100%;}
+    .header {top:0;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;}
+    .title {font-size:22px;font-weight:600;}
+    .img{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0.5;z-index:-1;} 
+    .login-box {background:rgba(24,34,58,0.93);border-radius:12px;padding:36px;width:370px;text-align:center;color:#fff;margin-top:120px;}
+    .login-box h1 {margin-bottom:20px;}
+    .login-box input {width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:rgba(255,255,255,0.085);color:#fff;}
+    .login-box button {width:106%;padding:12px;margin-top:12px;border-radius:8px;border:none;background:linear-gradient(90deg,#2f80ed,#9b51e0);color:#fff;font-weight:700;}
+    .error {color:#ff8a8a;height:18px;}
+    .footer {bottom:0;text-align:center;padding:10px;font-size:14px;}
+    a.small {color:#9fb7ff;text-decoration:underline;cursor:pointer;margin-left:10px;}
+  </style>
+</head>
+<body>
+  <img class="img" src="https://images.pexels.com/photos/2578323/pexels-photo-2578323.jpeg" alt="bg"> 
+<div class="header"><span class="title">STUDENT FEEDBACK SYSTEM</span></div>
+<div class="login-box">
+  <h1>Login</h1>
+  <form id="loginForm">
+    <input id="userId" type="text" placeholder="Enter ID" required />
+    <input id="password" type="password" placeholder="Enter Password" required />
+    <button type="submit">Login</button>
+    <div class="error" id="errorMsg"></div>
+  </form>
+ 
+</div>
+<div class="footer">&copy; 2025 Student Feedback Portal</div>
+<script>
+if(!localStorage.getItem('admins')) localStorage.setItem('admins', JSON.stringify([{id:'admin', password:'admin123'}]));
+if(!localStorage.getItem('students')) localStorage.setItem('students', '[]');
+if(!localStorage.getItem('faculty')) localStorage.setItem('faculty', '[]');
+if(!localStorage.getItem('subjects')) localStorage.setItem('subjects', '[]');
+if(!localStorage.getItem('questions')) localStorage.setItem('questions', '[]');
+if(!localStorage.getItem('feedback')) localStorage.setItem('feedback', '[]');
+document.getElementById('loginForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const userId = document.getElementById('userId').value.trim();
+  const password = document.getElementById('password').value;
+  const admins = JSON.parse(localStorage.getItem('admins') || '[]');
+  const students = JSON.parse(localStorage.getItem('students') || '[]');
+  const faculty = JSON.parse(localStorage.getItem('faculty') || '[]');
+  const admin = admins.find(a=>a.id===userId && a.password===password);
+  const student = students.find(s=>s.id===userId && s.password===password);
+  const fac = faculty.find(f=>f.id===userId && f.password===password);
+  if(admin){
+    localStorage.setItem('loggedInUserId', userId);
+    localStorage.setItem('loggedInUserType', 'admin');
+    window.location.href = 'admin.html';
+  } else if(student){
+    localStorage.setItem('loggedInUserId', userId);
+    localStorage.setItem('loggedInUserType', 'student');
+    window.location.href = 'student-feedback.html';
+  } else if(fac){
+    localStorage.setItem('loggedInUserId', userId);
+    localStorage.setItem('loggedInUserType', 'faculty');
+    window.location.href = 'fac.html';
+  } else {
+    document.getElementById('errorMsg').textContent = 'Invalid ID or password';
+  }
+});
+</script>
+</body>
+</html>

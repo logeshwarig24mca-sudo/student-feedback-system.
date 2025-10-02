@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Admin - Dashboard</title>
+<style>
+body {margin:0;font-family:Arial,sans-serif;background:#f4f7fb;display:flex;flex-direction:column;min-height:100vh;}
+.header, .footer {background:#133b5c;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.container {display:flex;flex:1;}
+.sidebar {width:240px;background:#1d354e;color:#ffffff;padding-top:18px;}
+.sidebar a{display:block;padding:12px 18px;color:white;text-decoration:none;cursor:pointer;}
+.sidebar a:hover{background:#2f6a9f;}
+.content {flex:1;padding:20px;}
+button.primary{background:#0e3561;color:#fff;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;}
+table{width:100%;border-collapse:collapse;background:#fff;margin-top:12px;}
+th,td{padding:10px;border:1px solid #e3e8ef;text-align:left;}
+td .action-btn {
+  display: inline-block;
+  margin-right: 6px;   /* space between Edit and Delete */
+  vertical-align: middle;
+}
+
+td:last-child {
+  display: flex;
+  gap: 6px;            /* equal spacing between buttons */
+  justify-content: flex-start; /* align left */
+  align-items: center; /* align vertically */
+}
+
+th{background:#27507c;color:#fff;}
+.action-btn{padding:6px 8px;border-radius:6px;border:none;color:#fff;cursor:pointer}
+.edit{background:#f39c12}
+.del{background:#d41124}
+.small{font-size:13px;color:#555}
+.form-wrap{background:#fff;padding:12px;border-radius:8px;border:1px solid #e3e8ef;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="header"><div><strong>Admin Dashboard</strong></div><div><button onclick="logout()">Logout</button></div></div>
+<div class="container">
+<div class="sidebar">
+<a onclick="showSection('students')">Manage Students</a>
+<a onclick="showSection('faculty')">Manage Faculty</a>
+<a onclick="showSection('subjects')">Manage Subjects</a>
+<a onclick="showSection('questions')">Manage Questions</a>
+<a onclick="showSection('feedback')">View Feedback</a>
+</div>
+<div class="content" id="content">
+</div>
+</div>
+<div class="footer">&copy; 2025 Student Feedback Portal</div>
+
+<script>
+const get = k => JSON.parse(localStorage.getItem(k) || '[]');
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+function logout(){ localStorage.removeItem('loggedInUserId'); localStorage.removeItem('loggedInUserType'); window.location.href='login.html'; }
+function showSection(type){
+const content = document.getElementById('content');
+
+let html = '';
+if(type==='students'){
+const students = get('students');
+html += '<h2>Manage Students</h2><button class="primary" onclick="addStudent()">Add Student</button>';
+html += '<table><tr><th>Name</th><th>ID</th><th>Password</th><th>Actions</th></tr>';
+students.forEach((s,i)=> html += `<tr><td>${s.name}</td><td>${s.id}</td><td>${s.password||''}</td>
+<td><button class="action-btn edit" onclick="editStudent(${i})">Edit</button> <button class="action-btn del" onclick="deleteStudent(${i})">Delete</button></td></tr>`);
+html += '</table>';
+} else if(type==='faculty'){
+const fac = get('faculty');
+html += '<h2>Manage Faculty</h2><button class="primary" onclick="addFaculty()">Add Faculty</button>';
+html += '<table><tr><th>Name</th><th>ID</th><th>Password</th><th>Subjects</th><th>Actions</th></tr>';
+fac.forEach((f,i)=> html += `<tr><td>${f.name}</td><td>${f.id}</td><td>${f.password||''}</td><td>${(f.subjects||[]).join(', ')}</td>
+<td><button class="action-btn edit" onclick="editFaculty(${i})">Edit</button> <button class="action-btn del" onclick="deleteFaculty(${i})">Delete</button></td></tr>`);
+html += '</table>';
+} else if(type==='subjects'){
+const s = get('subjects');
+html += '<h2>Manage Subjects</h2><button class="primary" onclick="addSubject()">Add Subject</button>';
+html += '<table><tr><th>Code</th><th>Name</th><th>Actions</th></tr>';
+s.forEach((sub,i)=> html += `<tr><td>${sub.code}</td><td>${sub.name}</td><td>
+<button class="action-btn edit" onclick="editSubject(${i})">Edit</button> <button class="action-btn del" onclick="deleteSubject(${i})">Delete</button></td></tr>`);
+html += '</table>';
+} else if(type==='questions'){
+const q = get('questions');
+html += '<h2>Manage Questions</h2><button class="primary" onclick="showQuestionForm()">Add Question</button>';
+html += '<table><tr><th>Question</th><th>Type</th><th>Options</th><th>Actions</th></tr>';
+q.forEach((qq,i)=> html += `<tr><td>${qq.text}</td><td>${qq.type}</td><td>${(qq.options||[]).join(' | ')}</td>
+<td><button class="action-btn edit" onclick="editQuestion(${i})">Edit</button> <button class="action-btn del" onclick="deleteQuestion(${i})">Delete</button></td></tr>`);
+html += '</table><div id="qform" class="form-wrap"></div>';
+} else if(type==='feedback'){
+    const fb = get('feedback');
+    const students = get('students');
+    const subjects = get('subjects');
+    html += '<h2>View Feedback (read-only)</h2>';
+
+    // Delete All button
+    if(fb.length > 0){
+        html += '<button class="primary" onclick="deleteAllFeedback()">Delete All Feedback</button>';
+    }
+
+    if(fb.length===0) html += '<p class="small">No feedback submitted yet.</p>';
+
+    fb.forEach((f,i)=>{
+        const student = students.find(s=>s.id===f.studentId) || {};
+        const subj = subjects.find(s=>s.code===f.subject) || {};
+        html += `<div style="background:#fff;border:1px solid #e3e8ef;padding:10px;border-radius:8px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between">
+            <strong>${subj.name||f.subject}</strong>
+            <span>${student.name||f.studentId}</span>
+        </div>
+        <div style="margin-top:8px">`;
+        for(const [k,v] of Object.entries(f.answers||{})) html += `<div><strong>${k}</strong>: ${v}</div>`;
+        if(f.comments) html += `<div style="margin-top:6px"><strong>Comments:</strong> ${f.comments}</div>`;
+        html += `</div>
+       
+        </div>`;
+    });
+}
+
+content.innerHTML = html;
+}
+/* Student CRUD */
+function addStudent(){
+const name = prompt('Student name:'); if(!name) return;
+const id = prompt('Student ID (unique):'); if(!id) return;
+const password = prompt('Set password for student:', 'student123') || '';
+const students = get('students');
+if(students.find(s=>s.id===id)){ alert('ID exists'); return; }
+students.push({name,id,password});
+save('students', students);
+showSection('students');
+}
+function editStudent(i){
+const students = get('students'); const s = students[i]; if(!s) return;
+const name = prompt('Edit name:', s.name) || s.name;
+const id = prompt('Edit ID:', s.id) || s.id;
+const password = prompt('Edit password:', s.password) || s.password;
+if(id!==s.id && students.find(x=>x.id===id)){ alert('ID exists'); return; }
+students[i] = {name,id,password};
+save('students', students); showSection('students');
+}
+function deleteStudent(i){ if(!confirm('Delete?')) return; const students = get('students'); students.splice(i,1); save('students', students); showSection('students'); }
+/* Faculty CRUD */
+function addFaculty(){
+const name = prompt('Faculty name:'); if(!name) return;
+const id = prompt('Faculty ID (unique):'); if(!id) return;
+const password = prompt('Set password for faculty:', 'fac123') || '';
+const subj = prompt('Enter subject codes (comma separated) this faculty teaches another sub (optional):','') || '';
+const subjects = subj.split(',').map(s=>s.trim()).filter(Boolean);
+const fac = get('faculty'); if(fac.find(f=>f.id===id)){ alert('ID exists'); return; }
+fac.push({name,id,password,subjects}); save('faculty', fac); showSection('faculty');
+}
+function editFaculty(i){
+const fac = get('faculty'); const f = fac[i]; if(!f) return;
+const name = prompt('Edit name:', f.name) || f.name;
+const id = prompt('Edit ID:', f.id) || f.id;
+const password = prompt('Edit password:', f.password) || f.password;
+const subj = prompt('Edit subject codes (comma separated):', (f.subjects||[]).join(', ')) || '';
+const subjects = subj.split(',').map(s=>s.trim()).filter(Boolean);
+if(id!==f.id && fac.find(x=>x.id===id)){ alert('ID exists'); return; }
+fac[i] = {name,id,password,subjects}; save('faculty', fac); showSection('faculty');
+}
+function deleteFaculty(i){ if(!confirm('Delete?')) return; const fac = get('faculty'); fac.splice(i,1); save('faculty', fac); showSection('faculty'); }
+/* Subjects */
+function addSubject(){ const code = prompt('Subject Code (unique):'); if(!code) return; const name = prompt('Subject Name:'); if(!name) return;
+const subs = get('subjects'); if(subs.find(s=>s.code===code)){ alert('Code exists'); return; } subs.push({code,name}); save('subjects', subs); showSection('subjects'); }
+function editSubject(i){ const subs = get('subjects'); const s = subs[i]; if(!s) return; const code = prompt('Edit code:', s.code)||s.code; const name = prompt('Edit name:', s.name)||s.name;
+if(code!==s.code && subs.find(x=>x.code===code)){ alert('Code exists'); return; } subs[i]={code,name}; save('subjects', subs); showSection('subjects'); }
+function deleteSubject(i){ if(!confirm('Delete?')) return; const subs = get('subjects'); subs.splice(i,1); save('subjects', subs); showSection('subjects'); }
+/* Questions */
+function showQuestionForm(){
+document.getElementById('qform').innerHTML = `
+<div><label>Question Text</label><input id="qtxt" style="width:100%;padding:8px;margin-top:6px" />
+<div style="margin-top:8px"><label>Type</label>
+<select id="qtype" style="padding:8px;margin-top:6px;"><option value="radio">radio</option><option value="text">text</option></select>
+</div>
+<div id="qopts" style="margin-top:8px"><label>Options (comma separated)</label><input id="qoptions" style="width:100%;padding:8px;margin-top:6px" placeholder="e.g. Excellent, Good, Average"/></div>
+<div style="margin-top:8px"><button onclick="saveQuestion()" class="primary">Save</button> <button onclick="document.getElementById('qform').innerHTML=''">Cancel</button></div></div>`;
+document.getElementById('qtype').addEventListener('change', function(){ document.getElementById('qopts').style.display = this.value==='radio' ? 'block' : 'none'; });
+}
+function deleteFeedback(i){
+    if(!confirm('Delete this feedback?')) return;
+    const fb = get('feedback');
+    fb.splice(i,1);
+    save('feedback', fb);
+    showSection('feedback');
+}
+
+function deleteAllFeedback(){
+    if(!confirm('Delete ALL feedback?')) return;
+    localStorage.removeItem('feedback');
+    showSection('feedback');
+}
+
+function saveQuestion(){
+const text = document.getElementById('qtxt').value.trim(); const type = document.getElementById('qtype').value;
+const opts = (document.getElementById('qoptions').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+if(!text){ alert('Enter text'); return; } if(type==='radio' && opts.length===0){ alert('Enter options'); return; }
+const qs = get('questions'); qs.push({text,type,options: type==='radio' ? opts : []}); save('questions', qs); document.getElementById('qform').innerHTML=''; showSection('questions');
+}
+function editQuestion(i){ const qs = get('questions'); const q=qs[i]; if(!q) return; const text = prompt('Edit text:', q.text) || q.text; const type = prompt('Type (radio/text):', q.type) || q.type;
+let options = q.options||[]; if(type==='radio'){ const o = prompt('Options comma separated:', (options||[]).join(', ')) || ''; options = o.split(',').map(s=>s.trim()).filter(Boolean); if(options.length===0){ alert('Enter options'); return; } } else options=[];
+qs[i] = {text,type,options}; save('questions', qs); showSection('questions');
+}
+function deleteQuestion(i){ if(!confirm('Delete?')) return; const qs = get('questions'); qs.splice(i,1); save('questions', qs); showSection('questions'); }
+/* initial */
+showSection('students');
+</script>
+</body>
+</html>

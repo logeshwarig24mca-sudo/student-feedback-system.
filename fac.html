@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Faculty Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #eef3f7;
+      color: #34495e;
+      padding-top: 60px;
+      padding-bottom: 40px;
+    }
+    .header, .footer {
+      position: fixed;
+      left: 0; width: 100%;
+      background: #2c3e50;
+      color: white;
+      text-align: center;
+      z-index: 10;
+    }
+    .header { top: 0; height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px;}
+    .header h1 { margin: 0; font-size: 20px; }
+    .header .btns button {
+      background: #ecf0f1; color: #2c3e50; border: none;
+      padding: 6px 14px; border-radius: 4px; cursor: pointer;
+      font-weight: 600; margin-left: 8px;
+    }
+    .header .btns button:hover { background: #bdc3c7; }
+    .footer { bottom: 0; padding: 12px; font-size: 14px; }
+    .layout { display: flex; min-height: calc(100vh - 100px); }
+    .sidebar {
+      width: 220px; background: #34495e; padding: 25px 20px;
+      color: white;
+    }
+    .sidebar h2 { font-size: 20px; margin-bottom: 20px; font-weight: 700; }
+    .sidebar .summary-item {
+      background: #3b5998; margin-bottom: 15px;
+      padding: 18px 20px; border-radius: 8px;
+      font-size: 18px; text-align: center; font-weight: 600;
+    }
+    .sidebar .green { background: #27ae60; }
+    .sidebar .yellow { background: #f39c12; }
+    .main-content {
+      flex-grow: 1; padding: 25px 30px;
+    }
+    .main-content h2 { margin-bottom: 20px; color: #2c3e50; }
+    .subject-card {
+      background: white; border-radius: 8px; padding: 18px 22px;
+      margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .subject-header {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .subject-header h3 {
+      margin: 0; font-size: 20px; font-weight: 700;
+    }
+    .subject-info {
+      display: flex; align-items: center;
+    }
+    .feedback-count {
+      background: #3498db; color: white;
+      padding: 8px 14px; border-radius: 20px;
+      font-weight: 700; margin-right: 15px;
+      text-align: center;
+    }
+    .btn-feedback {
+      background: #2980b9; color: white; border: none;
+      padding: 8px 16px; border-radius: 5px;
+      cursor: pointer; font-weight: 600;
+    }
+    .btn-feedback:hover { background: #1c5980; }
+    .feedback-list {
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid #dcdde1; display: none;
+    }
+    .feedback-item {
+      background: #f8fcff;
+      border: 1px solid #e6f2fb;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .feedback-item strong {
+      display: block;
+    }
+    @media(max-width: 700px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>STUDENT FEEDBACK SYSTEM</h1>
+    <div class="btns">
+     
+      <button onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>Dashboard Summary</h2>
+      <div class="summary-item" id="total-subjects">Total Subjects: 0</div>
+      <div class="summary-item green" id="total-feedbacks">Total Feedbacks: 0</div>
+      <div class="summary-item yellow" id="with-comments">Subjects with Feedback: 0</div>
+    </aside>
+    <main class="main-content">
+      <h2 id="faculty-name">Faculty: </h2>
+      <div id="subjects-container"></div>
+    </main>
+  </div>
+  <div class="footer">&copy; 2025 Student Feedback Portal</div>
+  <script>
+    const get = key => JSON.parse(localStorage.getItem(key) || '[]');
+    function currentUser() {
+      return {
+        id: localStorage.getItem('loggedInUserId'),
+        type: localStorage.getItem('loggedInUserType')
+      };
+    }
+    const user = currentUser();
+    if (!user.id || user.type !== 'faculty') {
+      alert('Please login as faculty');
+      window.location.href = 'login.html';
+    }
+    function logout() {
+      localStorage.removeItem('loggedInUserId');
+      localStorage.removeItem('loggedInUserType');
+      window.location.href = 'login.html';
+    }
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+    function renderDashboard() {
+      const facultyList = get('faculty');
+      const feedbackList = get('feedback');
+      const subjectList = get('subjects');
+      const students = get('students');
+      const faculty = facultyList.find(f => f.id === user.id) || { name: user.id, subjects: [] };
+      document.getElementById('faculty-name').textContent = "Faculty: " + faculty.name;
+      const totalSubjects = (faculty.subjects || []).length;
+      document.getElementById('total-subjects').textContent = "Total Subjects: " + totalSubjects;
+      const feedbackForFaculty = feedbackList.filter(f => (faculty.subjects || []).includes(f.subject));
+      document.getElementById('total-feedbacks').textContent = "Total Feedbacks: " + feedbackForFaculty.length;
+      const container = document.getElementById("subjects-container");
+      container.innerHTML = '';
+      let subjectsWithFb = 0;
+      (faculty.subjects || []).forEach((code, index) => {
+        const subj = subjectList.find(s => s.code === code) || { name: code, code };
+        const subjectFeedbacks = feedbackList.filter(fb => fb.subject === code);
+        if (subjectFeedbacks.length > 0) subjectsWithFb++;
+        const card = document.createElement("div");
+        card.className = "subject-card";
+        card.innerHTML = `
+          <div class="subject-header">
+            <h3>${subj.name} <small style="font-size: 12px; color: gray;">(${subj.code})</small></h3>
+            <div class="subject-info">
+              <div class="feedback-count">${subjectFeedbacks.length}</div>
+              <button class="btn-feedback" onclick="toggleFeedback(${index})">View Feedback</button>
+            </div>
+          </div>
+          <div class="feedback-list" id="feedback-${index}">
+            ${subjectFeedbacks.length === 0 ? `<div class="feedback-item">No feedback yet for this subject.</div>` : ''}
+            ${subjectFeedbacks.map(fb => {
+              const student = (students.find(s => s.id === fb.studentId) || {}).name || fb.studentId;
+              const answers = Object.entries(fb.answers || {}).map(([k, v]) => `<div><strong>${k}:</strong> ${v}</div>`).join('');
+              const comments = fb.comments ? `<div><strong>Comments:</strong> ${fb.comments}</div>` : '';
+              return `
+                <div class="feedback-item">
+                  <div style="display:flex;justify-content:space-between;">
+                    <strong></strong>
+                    <span style="font-size: 12px; color: gray;">${new Date(fb.timestamp).toLocaleString()}</span>
+                  </div>
+                  ${answers}
+                  ${comments}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      document.getElementById('with-comments').textContent = "Subjects with Feedback: " + subjectsWithFb;
+    }
+    function toggleFeedback(index) {
+      const el = document.getElementById(`feedback-${index}`);
+      const isVisible = el.style.display === "block";
+      document.querySelectorAll('.feedback-list').forEach(f => f.style.display = 'none');
+      el.style.display = isVisible ? "none" : "block";
+    }
+    renderDashboard();
+  </script>
+</body>
+</html>

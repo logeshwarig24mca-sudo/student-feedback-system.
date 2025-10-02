@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Student Feedback</title>
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #eef6fb; padding-top: 70px; padding-bottom: 60px; }
+    .header, .footer { position: fixed; left: 0; width: 100%; background: #1B3C53; color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+    .header { top: 0; }
+    .footer { bottom: 0; justify-content: center; }
+    .container { max-width: 900px; margin: 18px auto; background: #fff; padding: 18px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.04); }
+    h2 { color: #124268; margin-bottom: 16px; }
+    .options { display: flex; flex-direction: column; gap: 6px; }
+    .option-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+    textarea { width: 98%; min-height: 80px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+    button.submit { background: #2f4e6f; color: #fff; padding: 12px; border: none; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 12px; font-weight: 600; }
+    .note { margin-top: 16px; color: #226; font-weight: 600; }
+    .question-block { margin-bottom: 20px; }
+    .header div:last-child {
+  flex-shrink: 0; /* Prevents button from shrinking */
+}
+
+.header button {
+  padding: 6px 15px;  /* Make button fit within header */
+  font-size: 14px;
+}
+  </style>
+</head>
+<body>
+<div class="header">
+  <div>STUDENT FEEDBACK SYSTEM</div>
+  <div><button onclick="logout()">Logout</button></div>
+</div>
+<div class="container">
+  <h2 id="page-title"></h2>
+  <form id="fbform">
+    <label for="subject">Select Subject</label>
+    <select id="subject" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;margin-bottom:20px;">
+
+      <option value="" disabled selected>Select a subject</option>
+    </select>
+    <div id="questions-area"></div>
+    <label>Comments / Suggestions</label>
+    <textarea id="comments"></textarea>
+    <button class="submit" type="submit">Submit Feedback</button>
+  </form>
+  <div id="confirmation" class="note" style="display:none"></div>
+</div>
+<div class="footer">
+  <div>© 2025 Student Feedback System</div>
+</div>
+<script>
+const get = k => JSON.parse(localStorage.getItem(k) || '[]');
+const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+function currentUser() {
+  return {
+    id: localStorage.getItem('loggedInUserId'),
+    type: localStorage.getItem('loggedInUserType')
+  };
+}
+const user = currentUser();
+if (!user.id || user.type !== 'student') {
+  alert('Please login as a student');
+  window.location.href = 'login.html';
+}
+const subjects = get('subjects');
+const subjectSelect = document.getElementById('subject');
+const feedback = get('feedback').filter(f => f.studentId === user.id);
+const submittedSubjects = feedback.map(f => f.subject);
+// Populate dropdown and disable already submitted subjects
+subjects.forEach(s => {
+  const opt = document.createElement('option');
+  opt.value = s.code;
+  opt.textContent = `${s.name} (${s.code})`;
+  if (submittedSubjects.includes(s.code)) opt.disabled = true;
+  subjectSelect.appendChild(opt);
+});
+document.getElementById('subject').addEventListener('change', function () {
+  const selectedCode = this.value;
+  const selectedText = this.options[this.selectedIndex].text;
+  // If subject already submitted, disable form
+  if (submittedSubjects.includes(selectedCode)) {
+    document.getElementById('page-title').textContent = 'Feedback already submitted for: ' + selectedText;
+    document.getElementById('fbform').style.display = 'none';
+  } else {
+    document.getElementById('page-title').textContent = 'Feedback for: ' + selectedText;
+    document.getElementById('fbform').style.display = 'block';
+    renderQuestions();
+  }
+});
+function renderQuestions() {
+  const questions = get('questions');
+  const area = document.getElementById('questions-area');
+  area.innerHTML = '';
+  questions.forEach((q, idx) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'question-block';
+    const lab = document.createElement('label');
+    lab.textContent = q.text;
+    wrapper.appendChild(lab);
+    if (q.type === 'radio') {
+      const opts = document.createElement('div');
+      opts.className = 'options';
+      q.options.forEach((o, i) => {
+        const id = `q_${idx}_${i}`;
+        const inp = document.createElement('input');
+        inp.type = 'radio'; inp.name = `q_${idx}`; inp.value = o; inp.id = id;
+        const lbl = document.createElement('label');
+        lbl.htmlFor = id; lbl.textContent = o;
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'option-item';
+        optionDiv.appendChild(inp);
+        optionDiv.appendChild(lbl);
+        opts.appendChild(optionDiv);
+      });
+      wrapper.appendChild(opts);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.name = `q_${idx}`;
+      wrapper.appendChild(ta);
+    }
+    area.appendChild(wrapper);
+  });
+}
+document.getElementById('fbform').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const subj = subjectSelect.value;
+  if (!subj) {
+    alert('Select subject');
+    return;
+  }
+  const questions = get('questions');
+  const answers = {};
+  questions.forEach((q, idx) => {
+    if (q.type === 'radio') {
+      const checked = document.querySelector(`input[name="q_${idx}"]:checked`);
+      answers[q.text] = checked ? checked.value : '';
+    } else {
+      const ta = document.querySelector(`textarea[name="q_${idx}"]`);
+      answers[q.text] = ta ? ta.value.trim() : '';
+    }
+  });
+  const comments = document.getElementById('comments').value.trim();
+  const feedbackList = get('feedback');
+  feedbackList.push({
+    studentId: user.id,
+    subject: subj,
+    answers,
+    comments,
+    timestamp: new Date().toISOString()
+  });
+  save('feedback', feedbackList);
+  alert('Feedback submitted. Thank you!');
+  location.reload();
+});
+function checkAllSubmitted() {
+  const allSubjects = get('subjects').map(s => s.code);
+  const fb = get('feedback').filter(f => f.studentId === user.id);
+  const submittedSubjects = Array.from(new Set(fb.map(f => f.subject)));
+  const allDone = allSubjects.length>0 && allSubjects.every(code => submittedSubjects.includes(code));
+  const conf = document.getElementById('confirmation');
+  if (allDone) {
+    conf.style.display = 'block';
+    conf.textContent = 'Thank you — you have submitted feedback for all subjects.';
+    document.getElementById('fbform').style.display = 'none';
+  } else {
+    conf.style.display = 'none';
+  }
+}
+function logout() {
+  localStorage.removeItem('loggedInUserId');
+  localStorage.removeItem('loggedInUserType');
+  window.location.href = 'login.html';
+}
+// Initial run
+renderQuestions();
+checkAllSubmitted();
+</script>
+</body>
+</html>
