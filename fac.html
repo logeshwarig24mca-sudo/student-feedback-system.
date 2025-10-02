@@ -124,12 +124,12 @@
     const user = currentUser();
     if (!user.id || user.type !== 'faculty') {
       alert('Please login as faculty');
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
     }
     function logout() {
       localStorage.removeItem('loggedInUserId');
       localStorage.removeItem('loggedInUserType');
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
     }
     function goHome() {
       window.location.href = 'index.html';

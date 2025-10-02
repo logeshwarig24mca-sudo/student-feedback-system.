@@ -53,7 +53,7 @@ th{background:#27507c;color:#fff;}
 <script>
 const get = k => JSON.parse(localStorage.getItem(k) || '[]');
 const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
-function logout(){ localStorage.removeItem('loggedInUserId'); localStorage.removeItem('loggedInUserType'); window.location.href='login.html'; }
+function logout(){ localStorage.removeItem('loggedInUserId'); localStorage.removeItem('loggedInUserType'); window.location.href='index.html'; }
 function showSection(type){
 const content = document.getElementById('content');
 
