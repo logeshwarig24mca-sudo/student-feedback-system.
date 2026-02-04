@@ -1,8 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6CF66FJDX4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6CF66FJDX4');
+</script>
+
   <meta charset="UTF-8">
   <title>Login</title>
+
   <style>
     body {margin:0;font-family:sans-serif;background:#0c1220;display:flex;justify-content:center;align-items:flex-start;min-height:600px;}
     .header, .footer {background:rgba(255,255,255,0.085);color:#fff;position:fixed;left:0;width:100%;}
@@ -49,6 +59,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e){
   const admin = admins.find(a=>a.id===userId && a.password===password);
   const student = students.find(s=>s.id===userId && s.password===password);
   const fac = faculty.find(f=>f.id===userId && f.password===password);
+  
   if(admin){
     localStorage.setItem('loggedInUserId', userId);
     localStorage.setItem('loggedInUserType', 'admin');

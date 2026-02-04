@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6CF66FJDX4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-6CF66FJDX4');
+</script>
+
 <meta charset="utf-8" />
 <title>Admin - Dashboard</title>
 <style>
@@ -16,15 +26,15 @@ table{width:100%;border-collapse:collapse;background:#fff;margin-top:12px;}
 th,td{padding:10px;border:1px solid #e3e8ef;text-align:left;}
 td .action-btn {
   display: inline-block;
-  margin-right: 6px;   /* space between Edit and Delete */
+  margin-right: 6px;   
   vertical-align: middle;
 }
 
 td:last-child {
   display: flex;
-  gap: 6px;            /* equal spacing between buttons */
-  justify-content: flex-start; /* align left */
-  align-items: center; /* align vertically */
+  gap: 6px;            
+  justify-content: flex-start; 
+  align-items: center; 
 }
 
 th{background:#27507c;color:#fff;}
@@ -65,6 +75,7 @@ html += '<table><tr><th>Name</th><th>ID</th><th>Password</th><th>Actions</th></t
 students.forEach((s,i)=> html += `<tr><td>${s.name}</td><td>${s.id}</td><td>${s.password||''}</td>
 <td><button class="action-btn edit" onclick="editStudent(${i})">Edit</button> <button class="action-btn del" onclick="deleteStudent(${i})">Delete</button></td></tr>`);
 html += '</table>';
+
 } else if(type==='faculty'){
 const fac = get('faculty');
 html += '<h2>Manage Faculty</h2><button class="primary" onclick="addFaculty()">Add Faculty</button>';
@@ -72,6 +83,7 @@ html += '<table><tr><th>Name</th><th>ID</th><th>Password</th><th>Subjects</th><t
 fac.forEach((f,i)=> html += `<tr><td>${f.name}</td><td>${f.id}</td><td>${f.password||''}</td><td>${(f.subjects||[]).join(', ')}</td>
 <td><button class="action-btn edit" onclick="editFaculty(${i})">Edit</button> <button class="action-btn del" onclick="deleteFaculty(${i})">Delete</button></td></tr>`);
 html += '</table>';
+
 } else if(type==='subjects'){
 const s = get('subjects');
 html += '<h2>Manage Subjects</h2><button class="primary" onclick="addSubject()">Add Subject</button>';
@@ -79,6 +91,7 @@ html += '<table><tr><th>Code</th><th>Name</th><th>Actions</th></tr>';
 s.forEach((sub,i)=> html += `<tr><td>${sub.code}</td><td>${sub.name}</td><td>
 <button class="action-btn edit" onclick="editSubject(${i})">Edit</button> <button class="action-btn del" onclick="deleteSubject(${i})">Delete</button></td></tr>`);
 html += '</table>';
+
 } else if(type==='questions'){
 const q = get('questions');
 html += '<h2>Manage Questions</h2><button class="primary" onclick="showQuestionForm()">Add Question</button>';
@@ -86,13 +99,13 @@ html += '<table><tr><th>Question</th><th>Type</th><th>Options</th><th>Actions</t
 q.forEach((qq,i)=> html += `<tr><td>${qq.text}</td><td>${qq.type}</td><td>${(qq.options||[]).join(' | ')}</td>
 <td><button class="action-btn edit" onclick="editQuestion(${i})">Edit</button> <button class="action-btn del" onclick="deleteQuestion(${i})">Delete</button></td></tr>`);
 html += '</table><div id="qform" class="form-wrap"></div>';
+
 } else if(type==='feedback'){
     const fb = get('feedback');
     const students = get('students');
     const subjects = get('subjects');
     html += '<h2>View Feedback (read-only)</h2>';
 
-    // Delete All button
     if(fb.length > 0){
         html += '<button class="primary" onclick="deleteAllFeedback()">Delete All Feedback</button>';
     }
@@ -118,7 +131,7 @@ html += '</table><div id="qform" class="form-wrap"></div>';
 
 content.innerHTML = html;
 }
-/* Student CRUD */
+
 function addStudent(){
 const name = prompt('Student name:'); if(!name) return;
 const id = prompt('Student ID (unique):'); if(!id) return;
@@ -129,6 +142,7 @@ students.push({name,id,password});
 save('students', students);
 showSection('students');
 }
+
 function editStudent(i){
 const students = get('students'); const s = students[i]; if(!s) return;
 const name = prompt('Edit name:', s.name) || s.name;
@@ -138,8 +152,9 @@ if(id!==s.id && students.find(x=>x.id===id)){ alert('ID exists'); return; }
 students[i] = {name,id,password};
 save('students', students); showSection('students');
 }
+
 function deleteStudent(i){ if(!confirm('Delete?')) return; const students = get('students'); students.splice(i,1); save('students', students); showSection('students'); }
-/* Faculty CRUD */
+
 function addFaculty(){
 const name = prompt('Faculty name:'); if(!name) return;
 const id = prompt('Faculty ID (unique):'); if(!id) return;
